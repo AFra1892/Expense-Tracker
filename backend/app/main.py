@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+
 from .database import Base, engine, SessionLocal
 from .routers import auth, categories, transactions, reports
 from .seed import seed_categories
