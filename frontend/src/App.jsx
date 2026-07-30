@@ -3,24 +3,28 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
+import Layout from "./pages/Layout";
+import Transactions from "./pages/Transactions";
+import Charts from "./pages/Charts";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/transactions" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/charts" element={<Charts />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>

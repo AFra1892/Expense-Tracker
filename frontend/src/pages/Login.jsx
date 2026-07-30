@@ -16,7 +16,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate("/transactions");
     } catch (err) {
       setError(err.response?.data?.detail || "Login failed");
     } finally {

@@ -1,6 +1,5 @@
-from datetime import datetime, date
+from datetime import datetime, date as date_type
 from pydantic import BaseModel, EmailStr
-
 
 # ---- Auth ----
 
@@ -43,14 +42,14 @@ class CategoryOut(BaseModel):
 class TransactionCreate(BaseModel):
     description: str
     amount: float
-    date: date
+    date: date_type
     category_id: str | None = None
 
 
 class TransactionUpdate(BaseModel):
     description: str | None = None
     amount: float | None = None
-    date: date | None = None
+    date: date_type | None = None
     category_id: str | None = None
 
 
@@ -58,14 +57,13 @@ class TransactionOut(BaseModel):
     id: str
     description: str
     amount: float
-    date: date
+    date: date_type
     category: CategoryOut | None = None
     category_source: str
     was_corrected: bool
 
     class Config:
         from_attributes = True
-
 
 class CategoryBreakdownItem(BaseModel):
     category: str
