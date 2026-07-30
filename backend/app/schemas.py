@@ -40,6 +40,20 @@ class CategoryOut(BaseModel):
 
 # ---- Transaction (scaffolded now, wired up in Phase 2) ----
 
+class TransactionCreate(BaseModel):
+    description: str
+    amount: float
+    date: date
+    category_id: str | None = None
+
+
+class TransactionUpdate(BaseModel):
+    description: str | None = None
+    amount: float | None = None
+    date: date | None = None
+    category_id: str | None = None
+
+
 class TransactionOut(BaseModel):
     id: str
     description: str
@@ -47,6 +61,17 @@ class TransactionOut(BaseModel):
     date: date
     category: CategoryOut | None = None
     category_source: str
+    was_corrected: bool
 
     class Config:
         from_attributes = True
+
+
+class CategoryBreakdownItem(BaseModel):
+    category: str
+    total: float
+
+
+class MonthlyTotalItem(BaseModel):
+    month: str
+    total: float

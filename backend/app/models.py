@@ -19,18 +19,17 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    categories = relationship("Category", back_populates="owner", cascade="all, delete-orphan")
     transactions = relationship("Transaction", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Category(Base):
+    """Preset, global categories shared by all users (not user-owned)."""
+
     __tablename__ = "categories"
 
     id = Column(String, primary_key=True, default=gen_uuid)
-    name = Column(String, nullable=False)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False, unique=True)
 
-    owner = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
 
 
