@@ -28,7 +28,7 @@ uvicorn app.main:app --reload
 Backend runs at `http://localhost:8000`. Interactive API docs at `http://localhost:8000/docs`.
 
 ### Frontend
-
+ 
 ```bash
 cd frontend
 npm install
