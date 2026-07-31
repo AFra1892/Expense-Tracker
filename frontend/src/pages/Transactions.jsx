@@ -1,3 +1,4 @@
+import CsvImport from "./CsvImport";
 import { useEffect, useState } from "react";
 import { fetchCategories } from "../api/categories";
 import { fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from "../api/transactions";
@@ -28,6 +29,10 @@ export default function Transactions() {
     }
   }
 
+  async function refreshTransactions() {
+  const txns = await fetchTransactions();
+  setTransactions(txns);
+}
   async function handleCreate(txnData) {
     const created = await createTransaction(txnData);
     setTransactions((prev) => [created, ...prev]);
@@ -49,6 +54,7 @@ export default function Transactions() {
   return (
     <div>
       <h1>Transactions</h1>
+      <CsvImport onImported={refreshTransactions} />
       <TransactionForm categories={categories} onCreate={handleCreate} />
       <TransactionList
         transactions={transactions}

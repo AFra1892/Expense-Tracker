@@ -18,3 +18,12 @@ export async function updateTransaction(id, updates) {
 export async function deleteTransaction(id) {
   await apiClient.delete(`/transactions/${id}`);
 }
+
+export async function importTransactionsCsv(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await apiClient.post("/transactions/import-csv", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
