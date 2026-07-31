@@ -1,4 +1,4 @@
-from datetime import date as date_type
+from datetime import date as date_type ,datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
@@ -68,6 +68,62 @@ def create_transaction(
     db.refresh(txn)
     return txn
 
+@router.post("/import-csv", response_model=schemas.CSVImportResult)
+async def import_transactions_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be a .csv")
+
+    raw_bytes = await file.read()
+    text = raw_bytes.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(text))
+
+    if reader.fieldnames is None or not REQUIRED_CSV_COLUMNS.issubset(
+        {f.strip().lower() for f in reader.fieldnames}
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="CSV must have columns: date, description, amount (category is optional)",
+        )
+
+    category_lookup = {c.name.lower(): c.id for c in db.query(models.Category).all()}
+
+    imported = 0
+    errors: list[dict] = []
+
+    for row_num, row in enumerate(reader, start=2):
+        normalized = {k.strip().lower(): (v or "").strip() for k, v in row.items() if k}
+        try:
+            txn_date = _parse_date(normalized["date"])
+            description = normalized["description"]
+            if not description:
+                raise ValueError("Description cannot be empty")
+            amount = float(normalized["amount"])
+
+            category_id = None
+            category_name = normalized.get("category", "").lower()
+            if category_name:
+                category_id = category_lookup.get(category_name)
+
+            db.add(
+                models.Transaction(
+                    description=description,
+                    amount=amount,
+                    date=txn_date,
+                    category_id=category_id,
+                    user_id=current_user.id,
+                    category_source="manual",
+                )
+            )
+            imported += 1
+        except (ValueError, KeyError) as e:
+            errors.append({"row": row_num, "error": str(e)})
+
+    db.commit()
+    return {"imported": imported, "skipped": len(errors), "errors": errors[:20]}
 
 @router.put("/{transaction_id}", response_model=schemas.TransactionOut)
 def update_transaction(

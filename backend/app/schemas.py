@@ -73,3 +73,13 @@ class CategoryBreakdownItem(BaseModel):
 class MonthlyTotalItem(BaseModel):
     month: str
     total: float
+
+class CSVImportError(BaseModel):
+    row: int
+    error: str
+
+
+class CSVImportResult(BaseModel):
+    imported: int
+    skipped: int
+    errors: list[CSVImportError]
