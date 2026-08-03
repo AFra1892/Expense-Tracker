@@ -1,5 +1,5 @@
 from datetime import date as date_type ,datetime
-
+from ..ml_client import predict_category, CONFIDENCE_THRESHOLD
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
@@ -125,6 +125,82 @@ async def import_transactions_csv(
     db.commit()
     return {"imported": imported, "skipped": len(errors), "errors": errors[:20]}
 
+@router.post("/{transaction_id}/auto-categorize", response_model=schemas.AutoCategorizeResult)
+def auto_categorize_transaction(
+    transaction_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    txn = _get_owned_transaction(db, transaction_id, current_user)
+
+    category_name, confidence = predict_category(txn.description)
+    if category_name is None:
+        raise HTTPException(status_code=503, detail="Categorization model is unavailable")
+
+    category = db.query(models.Category).filter(models.Category.name == category_name).first()
+    applied = category is not None and confidence >= CONFIDENCE_THRESHOLD
+
+    if applied:
+        txn.category_id = category.id
+        txn.category_source = "model"
+        txn.was_corrected = False
+        db.commit()
+
+    return {
+        "transaction_id": txn.id,
+        "predicted_category": category_name,
+        "confidence": confidence,
+        "applied": applied,
+    }
+
+
+@router.post("/auto-categorize-all", response_model=schemas.BulkAutoCategorizeResult)
+def auto_categorize_all(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    uncategorized = (
+        db.query(models.Transaction)
+        .filter(models.Transaction.user_id == current_user.id, models.Transaction.category_id.is_(None))
+        .all()
+    )
+
+    category_by_name = {c.name: c for c in db.query(models.Category).all()}
+
+    applied_count = 0
+    low_confidence_count = 0
+    results = []
+
+    for txn in uncategorized:
+        category_name, confidence = predict_category(txn.description)
+        applied = False
+
+        if category_name is not None:
+            category = category_by_name.get(category_name)
+            if category and confidence >= CONFIDENCE_THRESHOLD:
+                txn.category_id = category.id
+                txn.category_source = "model"
+                applied = True
+                applied_count += 1
+            else:
+                low_confidence_count += 1
+
+        results.append({
+            "transaction_id": txn.id,
+            "predicted_category": category_name,
+            "confidence": confidence,
+            "applied": applied,
+        })
+
+    db.commit()
+
+    return {
+        "total_uncategorized": len(uncategorized),
+        "applied": applied_count,
+        "low_confidence_skipped": low_confidence_count,
+        "results": results,
+    }
+    
 @router.put("/{transaction_id}", response_model=schemas.TransactionOut)
 def update_transaction(
     transaction_id: str,

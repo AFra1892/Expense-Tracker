@@ -83,3 +83,16 @@ class CSVImportResult(BaseModel):
     imported: int
     skipped: int
     errors: list[CSVImportError]
+
+class AutoCategorizeResult(BaseModel):
+    transaction_id: str
+    predicted_category: str | None
+    confidence: float | None
+    applied: bool
+
+
+class BulkAutoCategorizeResult(BaseModel):
+    total_uncategorized: int
+    applied: int
+    low_confidence_skipped: int
+    results: list[AutoCategorizeResult]

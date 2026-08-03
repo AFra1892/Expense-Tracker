@@ -236,3 +236,11 @@ body {
   color: #555;
   margin-top: 0.25rem;
 }
+
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.toolbar .csv-import { margin-bottom: 0; }

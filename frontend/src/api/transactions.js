@@ -27,3 +27,7 @@ export async function importTransactionsCsv(file) {
   });
   return data;
 }
+export async function autoCategorizeAll() {
+  const { data } = await apiClient.post("/transactions/auto-categorize-all");
+  return data;
+}

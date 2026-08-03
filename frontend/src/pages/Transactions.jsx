@@ -4,6 +4,7 @@ import { fetchCategories } from "../api/categories";
 import { fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from "../api/transactions";
 import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
+import AutoCategorizeButton from "./AutoCategorizeButton";
 
 export default function Transactions() {
   const [categories, setCategories] = useState([]);
@@ -54,7 +55,10 @@ export default function Transactions() {
   return (
     <div>
       <h1>Transactions</h1>
-      <CsvImport onImported={refreshTransactions} />
+      <div className="toolbar">
+        <CsvImport onImported={refreshTransactions} />
+        <AutoCategorizeButton onDone={refreshTransactions} />
+      </div>
       <TransactionForm categories={categories} onCreate={handleCreate} />
       <TransactionList
         transactions={transactions}
