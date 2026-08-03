@@ -1,26 +1,29 @@
-from datetime import date as date_type ,datetime
-from ..ml_client import predict_category, CONFIDENCE_THRESHOLD
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date as date_type, datetime
+import csv
+import io
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..database import get_db
 from ..auth import get_current_user
+from ..ml_client import predict_category, CONFIDENCE_THRESHOLD
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
-
-def _get_owned_transaction(db: Session, transaction_id: str, user: models.User) -> models.Transaction:
-    txn = (
-        db.query(models.Transaction)
-        .filter(models.Transaction.id == transaction_id, models.Transaction.user_id == user.id)
-        .first()
-    )
-    if not txn:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
-    return txn
+REQUIRED_CSV_COLUMNS = {"date", "description", "amount"}
+DATE_FORMATS = ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y"]
 
 
+def _parse_date(raw: str) -> date_type:
+    raw = raw.strip()
+    for fmt in DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognized date format: '{raw}'")
 @router.get("", response_model=list[schemas.TransactionOut])
 def list_transactions(
     category_id: str | None = None,
